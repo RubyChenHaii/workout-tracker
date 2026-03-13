@@ -1031,7 +1031,8 @@ function AboutTab(){
         {/* App icon + version */}
         <Card style={{marginBottom:16}}>
           <div style={{padding:"28px 16px",display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
-            <div style={{width:72,height:72,borderRadius:18,background:`linear-gradient(135deg,${C.blue},${C.indigo})`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:36,boxShadow:"0 4px 16px rgba(0,122,255,0.3)"}}>💪</div>
+            <img src={process.env.PUBLIC_URL+"/logo192.png"} alt="GymReco"
+              style={{width:72,height:72,borderRadius:18,boxShadow:"0 4px 16px rgba(0,0,0,0.15)",objectFit:"cover"}}/>
             <div style={{fontSize:20,fontWeight:700,color:C.text}}>GymReco</div>
             <div style={{fontSize:13,color:C.label}}>Version 1.0.0</div>
           </div>
