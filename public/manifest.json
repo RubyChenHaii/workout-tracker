@@ -18,7 +18,7 @@
       "sizes": "512x512"
     }
   ],
-  "start_url": ".",
+  "start_url": "/workout-tracker/",
   "display": "standalone",
   "theme_color": "#007AFF",
   "background_color": "#F2F2F7"
