@@ -3,6 +3,7 @@
 **A mobile-first PWA workout tracker｜手機優先的健身紀錄 App**
 
 > Log your workouts, build your exercise library, and track your progress — all stored locally on your device.
+
 > 輕鬆紀錄訓練、管理動作庫、追蹤進度。資料全部存在你的手機本地端。
 
 ---
