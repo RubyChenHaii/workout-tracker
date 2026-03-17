@@ -77,14 +77,15 @@ npm run deploy
 ## 🤖 Development Story｜開發歷程
 
 This app was built entirely through **conversational AI-assisted development** with Claude Sonnet 4.6, without writing a single line of code manually.
+The entire codebase was produced through natural language conversation, with the human contributor acting as product owner, tester, and decision-maker throughout.
 
 The development process unfolded across several days of iterative prompting:
 
 **Day 1 — Prototype**
-Starting from a simple idea — replacing an iPhone Notes workout log — the first React prototype was generated through a series of prompts describing the desired UI, data structure, and interaction patterns. Four versions were iterated in a single session, evolving from a dark aesthetic to a clean iOS-native style.
+Starting from a simple idea — replacing an iPhone Notes workout log - the first React prototype was generated through a series of prompts describing the desired UI, data structure, and interaction patterns. Four versions were iterated in a single session, aimed at a clean iOS-native style.
 
 **Day 2 — Feature Expansion**
-Through continued conversation, the app gained a full exercise library system with persistent knowledge notes, a training calendar, bilingual (zh/EN) support, and a bottom navigation bar. All UI decisions — including the symmetric icon-based nav and the colour token system — emerged from back-and-forth dialogue.
+The app gained a full exercise library system with persistent knowledge notes, a training calendar, bilingual (zh/EN) support, colour token system, and a bottom navigation bar.
 
 **Day 3 — Deployment & Polish**
 The app was deployed to GitHub Pages as a PWA via step-by-step prompting through the entire toolchain: Node.js, Create React App, gh-pages, Git, and Netlify. Issues encountered along the way (JSON syntax errors, missing React imports, corrupted index.html from TextEdit) were all diagnosed and fixed through conversation.
@@ -94,8 +95,6 @@ A collaborative security and functionality audit — including a comparison with
 
 **Day 5 and counting...**
 Testing, debugging and so on...
-
-> The entire codebase — from data architecture to UI components to deployment config — was produced through natural language conversation, with the human contributor acting as product owner, tester, and decision-maker throughout.
 
 ---
 
