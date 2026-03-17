@@ -247,7 +247,9 @@ const INIT_WORKOUTS = [
 ];
 
 // ── helpers ───────────────────────────────────────────────────
-const todayStr=()=>new Date().toISOString().slice(0,10);
+const todayStr=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;};
+// 把 "YYYY-MM-DD" 字串轉成本地時間的 Date，避免時區偏移問題
+const localDate=(s)=>new Date(s+"T00:00:00");
 // #6 改用 crypto.randomUUID() 避免 ID 碰撞
 const uid=()=>{
   if(typeof crypto!=="undefined"&&crypto.randomUUID) return crypto.randomUUID();
@@ -255,9 +257,9 @@ const uid=()=>{
 };
 // #3 fmtDate 支援語言參數
 const fmtDate=(s,lang="zh")=>{
-  const d=new Date(s),t=new Date(); t.setHours(0,0,0,0);
+  const d=localDate(s),t=new Date(); t.setHours(0,0,0,0);
   const y=new Date(t); y.setDate(t.getDate()-1);
-  const dt=new Date(d); dt.setHours(0,0,0,0);
+  const dt=localDate(s); dt.setHours(0,0,0,0);
   if(dt.getTime()===t.getTime()) return lang==="en"?"Today":"今天";
   if(dt.getTime()===y.getTime()) return lang==="en"?"Yesterday":"昨天";
   return `${d.getMonth()+1}/${d.getDate()}`;
@@ -339,7 +341,7 @@ function Calendar({workouts,library,onDayClick}){
   const yr=vd.getFullYear(),mo=vd.getMonth();
   const firstDay=new Date(yr,mo,1).getDay();
   const dim=new Date(yr,mo+1,0).getDate();
-  const todStr=new Date().toISOString().slice(0,10);
+  const todStr=todayStr();
   const byDate={};
   workouts.forEach(w=>{
     if(!byDate[w.date]) byDate[w.date]={date:w.date,exercises:[]};
@@ -399,8 +401,8 @@ function Calendar({workouts,library,onDayClick}){
 function HomeTab({workouts,library,setTab,lang,setLang,darkMode,setDarkMode,openDayDetail}){
   const t=T[lang]; const C=useC();
   const now=new Date(),weekAgo=new Date(now); weekAgo.setDate(now.getDate()-7);
-  const thisWeek=workouts.filter(w=>new Date(w.date)>=weekAgo);
-  const recent=[...workouts].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,3);
+  const thisWeek=workouts.filter(w=>localDate(w.date)>=weekAgo);
+  const recent=[...workouts].sort((a,b)=>localDate(b.date)-localDate(a.date)).slice(0,3);
   return(
     <div style={{flex:1,overflowY:"auto",background:C.bg}}>
       <div style={{padding:"8px 20px 16px",background:C.card,borderBottom:`1px solid ${C.sep}`,display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
@@ -586,6 +588,8 @@ function LogTab({library,onSave,showToast}){
   const [rows,setRows]=useState([]);
   const [showLibPicker,setShowLib]=useState(false);
   const [libSearch,setLibSearch]=useState("");
+  const [selectedDate,setSelectedDate]=useState(todayStr());
+  const [showDatePicker,setShowDatePicker]=useState(false);
 
   const addRow=(libId)=>{
     const item=library.find(l=>l.id===libId);
@@ -609,27 +613,100 @@ function LogTab({library,onSave,showToast}){
 
   const handleSave=()=>{
     if(rows.length===0){showToast(t.atLeastOne);return;}
+    const sd=localDate(selectedDate);
     const workout={
-      id:uid(), date:todayStr(), weekday:WEEKDAYS[new Date().getDay()],
+      id:uid(), date:selectedDate, weekday:WEEKDAYS[sd.getDay()],
       muscleGroups: muscleGroups.length>0 ? muscleGroups
         : [...new Set(rows.map(r=>library.find(l=>l.id===r.libId)?.muscleGroup).filter(Boolean))],
       exercises: rows.map(r=>({libId:r.libId,equipment:r.equipment,weightSets:r.weightSets,feeling:r.feeling})),
     };
     const noteUpdates=rows.filter(r=>r.noteDirty).map(r=>({libId:r.libId,note:r.noteLocal}));
     onSave(workout,noteUpdates);
-    setRows([]); setMG([]);
+    setRows([]); setMG([]); setSelectedDate(todayStr());
   };
 
-  const now=new Date();
+  const sd=localDate(selectedDate);
+  const isToday=selectedDate===todayStr();
   const dateLabel=lang==="zh"
-    ?`${now.getMonth()+1}/${now.getDate()} ${WEEKDAY_CN[now.getDay()]}`
-    :`${now.getMonth()+1}/${now.getDate()} ${WEEKDAYS[now.getDay()].slice(0,3)}`;
+    ?`${sd.getMonth()+1}/${sd.getDate()} ${WEEKDAY_CN[sd.getDay()]}`
+    :`${sd.getMonth()+1}/${sd.getDate()} ${WEEKDAYS[sd.getDay()].slice(0,3)}`;
 
   return(
     <div style={{flex:1,overflowY:"auto",background:C.bg}}>
-      <div style={{padding:"8px 20px 14px",background:C.card,borderBottom:`1px solid ${C.sep}`}}>
-        <div style={{fontSize:13,color:C.label,marginBottom:1}}>{t.logSubtitle}</div>
-        <div style={{fontSize:20,fontWeight:700,color:C.text,letterSpacing:-0.3}}>{dateLabel}</div>
+      {/* 日期選擇器 Sheet */}
+      {showDatePicker&&(()=>{
+        const today=localDate(todayStr());
+        const cur=localDate(selectedDate);
+        // 產生過去 60 天的日期清單
+        const days=Array.from({length:10},(_,i)=>{
+          const d=new Date(today); d.setDate(today.getDate()-(i+1));
+          return d;
+        });
+        return(
+          <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.45)",display:"flex",flexDirection:"column",zIndex:200}}
+            onClick={e=>{if(e.target===e.currentTarget)setShowDatePicker(false);}}>
+            <div style={{marginTop:"auto",background:C.card,borderRadius:"20px 20px 0 0",maxHeight:"70vh",display:"flex",flexDirection:"column"}}>
+              {/* Handle */}
+              <div style={{display:"flex",justifyContent:"center",padding:"12px 0 4px"}}>
+                <div style={{width:36,height:4,borderRadius:2,background:C.sep}}/>
+              </div>
+              {/* Title */}
+              <div style={{padding:"8px 20px 12px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:`1px solid ${C.sep}`}}>
+                <span style={{fontSize:17,fontWeight:700,color:C.text}}>{lang==="zh"?"選擇日期":"Select Date"}</span>
+                <button onClick={()=>setShowDatePicker(false)}
+                  style={{background:C.f5,border:"none",borderRadius:"50%",width:28,height:28,color:C.label,fontSize:16,cursor:"pointer"}}>×</button>
+              </div>
+              {/* 日期清單 */}
+              <div style={{overflowY:"auto",padding:"8px 16px 32px"}}>
+                {/* 提醒文字 */}
+                <div style={{fontSize:12,color:C.label,textAlign:"center",padding:"8px 0 12px",lineHeight:1.6}}>
+                  {lang==="zh"?"補登日期僅限前 10 日之內":"Back-logging is limited to the past 10 days"}
+                </div>
+                {days.map((d,i)=>{
+                  const ds=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+                  const isSelected=ds===selectedDate;
+                  const isT=ds===todayStr();
+                  const dow=d.getDay();
+                  const label=lang==="zh"
+                    ?`${d.getMonth()+1}月${d.getDate()}日　${WEEKDAY_CN[dow]}`
+                    :`${MONTHS_EN[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}　${WEEKDAYS[dow].slice(0,3)}`;
+                  return(
+                    <button key={ds} onClick={()=>{setSelectedDate(ds);setShowDatePicker(false);}}
+                      style={{
+                        width:"100%",padding:"13px 16px",marginBottom:4,
+                        background:isSelected?C.blue:C.f5,
+                        border:isSelected?`none`:`1px solid ${C.sep}`,
+                        borderRadius:12,cursor:"pointer",
+                        display:"flex",justifyContent:"space-between",alignItems:"center",
+                        boxSizing:"border-box",
+                      }}>
+                      <span style={{fontSize:15,fontWeight:isSelected?700:400,color:isSelected?"#fff":C.text}}>{label}</span>
+                      {isT&&<span style={{fontSize:11,fontWeight:600,
+                        color:isSelected?"rgba(255,255,255,0.8)":C.blue,
+                        background:isSelected?"rgba(255,255,255,0.2)":`${C.blue}15`,
+                        borderRadius:6,padding:"2px 8px"}}>
+                        {lang==="zh"?"今天":"Today"}
+                      </span>}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+      <div style={{padding:"8px 20px 14px",background:C.card,borderBottom:`1px solid ${C.sep}`,display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
+        <div>
+          <div style={{fontSize:13,color:C.label,marginBottom:1}}>{t.logSubtitle}</div>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <div style={{fontSize:20,fontWeight:700,color:C.text,letterSpacing:-0.3}}>{dateLabel}</div>
+            {!isToday&&<span style={{fontSize:11,fontWeight:600,color:C.orange,background:`${C.orange}15`,borderRadius:6,padding:"2px 8px"}}>{lang==="zh"?"補登":"Back-log"}</span>}
+          </div>
+        </div>
+        <button onClick={()=>setShowDatePicker(true)}
+          style={{background:C.f5,border:`1px solid ${C.sep}`,borderRadius:10,padding:"6px 12px",fontSize:13,color:C.sub,cursor:"pointer",marginBottom:4,fontWeight:500}}>
+          {lang==="zh"?"更改日期":"Change Date"}
+        </button>
       </div>
       <div style={{padding:"16px"}}>
         {/* Muscle group override */}
@@ -800,7 +877,7 @@ function HistoryTab({workouts,library,onOpenDay}){
       <div style={{padding:"16px"}}>
         {dates.map(date=>{
           const day=byDate[date];
-          const d=new Date(date);
+          const d=localDate(date);
           const wdLabel=lang==="zh"?WEEKDAY_CN[d.getDay()]:WEEKDAYS[d.getDay()].slice(0,3);
           const allMGs=[...new Set(day.workouts.flatMap(w=>w.muscleGroups))];
           const allExercises=day.workouts.flatMap(w=>w.exercises);
@@ -851,7 +928,7 @@ function DetailTab({workout,library,onBack,onOpenLibItem,onUpdateWorkout,onDelet
   const [confirmDelete,setConfirmDelete]=useState(false);
 
   if(!workout) return null;
-  const d=new Date(workout.date);
+  const d=localDate(workout.date);
   const wdLabel=lang==="zh"?WEEKDAY_CN[d.getDay()]:WEEKDAYS[d.getDay()].slice(0,3);
 
   const startEdit=()=>{
@@ -1490,7 +1567,7 @@ function AboutTab({workouts,library,onImport}){
 function DayDetailTab({dayWorkouts,library,onBack,onOpenLibItem,onEditWorkout}){
   const lang=useLang(); const t=T[lang]; const C=useC();
   if(!dayWorkouts||dayWorkouts.length===0) return null;
-  const d=new Date(dayWorkouts[0].date);
+  const d=localDate(dayWorkouts[0].date);
   const wdLabel=lang==="zh"?WEEKDAY_CN[d.getDay()]:WEEKDAYS[d.getDay()].slice(0,3);
   const allMGs=[...new Set(dayWorkouts.flatMap(w=>w.muscleGroups))];
   return(
