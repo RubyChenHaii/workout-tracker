@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gymreco-v' + Date.now();
+const CACHE_NAME = 'gymreco-v1.8.0';
 const STATIC_ASSETS = [
   './logo192.png',
   './logo512.png',
