@@ -110,6 +110,12 @@ npm run deploy
 
 ---
 
+## ⛓️ Architecture｜架構 (v1.8.0)
+
+<img src="public/screenshots/architecture.PNG" width="500">
+
+---
+
 ## 🤖 Development Story｜開發歷程
 
 This project was developed entirely through AI-assisted development using Claude Sonnet 4.6, without writing a single line of code manually.
