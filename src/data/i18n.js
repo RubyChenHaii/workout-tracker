@@ -25,7 +25,8 @@ export const T = {
     logKnowledgePlaceholder:"姿勢提醒、器材心得…（儲存後同步至動作庫）",
     logFeelingLabel:"當次感受", logFeelingSub:"今天做這個動作的狀態（僅記錄在本次訓練）",
     logFeelingPlaceholder:"今天的狀態、感受…",
-    logRemove:"移除", logAddExercise:"+ 從動作庫選擇", logSave:"完成訓練",
+    logRemove:"移除", logAddExercise:"+ 新增動作 / 從動作庫選擇...", logSave:"完成訓練",
+    logAddNew:"＋ 新增動作", logAddNewTitle:"新增動作到庫",
     logPickerTitle:"選擇動作", logPickerSearch:"搜尋動作名稱或部位…",
     logLastSeen:"上次",
     // History
@@ -89,7 +90,8 @@ export const T = {
     logKnowledgePlaceholder:"Form cues, equipment tips… (synced to library on save)",
     logFeelingLabel:"Session Feeling", logFeelingSub:"How did this exercise feel today? (session only)",
     logFeelingPlaceholder:"Today's state, feeling…",
-    logRemove:"Remove", logAddExercise:"+ Pick from Library", logSave:"Finish Workout",
+    logRemove:"Remove", logAddExercise:"+ New Exercise / Pick from Library...", logSave:"Finish Workout",
+    logAddNew:"＋ New Exercise", logAddNewTitle:"Add Exercise to Library",
     logPickerTitle:"Select Exercise", logPickerSearch:"Search exercise or muscle…",
     logLastSeen:"Last",
     historyTitle:"Workout History", historySearch:"Search exercise or muscle…",
@@ -133,6 +135,6 @@ export const T = {
 
 export const MG_EN = {
   "胸肌":"Chest","背部":"Back","腿部":"Legs","肩部":"Shoulders",
-  "二頭":"Biceps","三頭":"Triceps","腹部":"Abs","核心":"Core",
+  "手臂":"Arms","腹部":"Abs","核心":"Core",
   "臀部":"Glutes","有氧":"Cardio","其他":"Other",
 };

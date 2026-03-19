@@ -72,7 +72,18 @@ export function HomeTab({ workouts, library, setTab, lang, setLang, darkMode, se
   const t = T[lang]; const C = useC();
   const now = new Date(), weekAgo = new Date(now); weekAgo.setDate(now.getDate() - 7);
   const thisWeek = workouts.filter(w => localDate(w.date) >= weekAgo);
-  const recent = [...workouts].sort((a, b) => localDate(b.date) - localDate(a.date)).slice(0, 3);
+
+  // 最近紀錄：以日為單位，去除同日重複，取最近 3 天
+  const recentDates = [...new Set(
+    [...workouts].sort((a, b) => localDate(b.date) - localDate(a.date)).map(w => w.date)
+  )].slice(0, 3);
+  const recentByDate = recentDates.map(date => {
+    const dayWorkouts = workouts.filter(w => w.date === date);
+    const allMGs = [...new Set(dayWorkouts.flatMap(w => w.muscleGroups))];
+    const allExercises = [...dayWorkouts].reverse().flatMap(w => w.exercises);
+    const weekday = dayWorkouts[0].weekday;
+    return { date, weekday, allMGs, allExercises };
+  });
 
   return (
     <div style={{ flex:1, overflowY:"auto", background:C.bg }}>
@@ -107,25 +118,25 @@ export function HomeTab({ workouts, library, setTab, lang, setLang, darkMode, se
         <Calendar workouts={workouts} library={library} onDayClick={date => openDayDetail(date)} />
         <SLabel>{t.sectionRecent}</SLabel>
         <Card style={{ marginBottom:16 }}>
-          {recent.length === 0 && <div style={{ padding:"32px", textAlign:"center", color:C.label, fontSize:14 }}>{t.emptyRecent}</div>}
-          {recent.map((w, i) => (
-            <div key={w.id}>
+          {recentByDate.length === 0 && <div style={{ padding:"32px", textAlign:"center", color:C.label, fontSize:14 }}>{t.emptyRecent}</div>}
+          {recentByDate.map((day, i) => (
+            <div key={day.date}>
               {i > 0 && <Div left={20} />}
-              <div onClick={() => openDayDetail(w.date)} style={{ padding:"14px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
+              <div onClick={() => openDayDetail(day.date)} style={{ padding:"14px 16px", cursor:"pointer", display:"flex", alignItems:"center", gap:12 }}>
                 <div style={{ flexShrink:0 }}>
                   <div style={{ fontSize:11, fontWeight:600, color:C.blue, background:`${C.blue}15`, borderRadius:6, padding:"2px 8px" }}>
-                    {lang === "zh" ? WEEKDAY_CN[WEEKDAYS.indexOf(w.weekday)] : w.weekday.slice(0, 3)}
+                    {lang === "zh" ? WEEKDAY_CN[WEEKDAYS.indexOf(day.weekday)] : day.weekday.slice(0, 3)}
                   </div>
                 </div>
                 <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
                     <span style={{ fontSize:15, fontWeight:600, color:C.text }}>
-                      {lang === "zh" ? w.muscleGroups.join("・") : w.muscleGroups.map(mg => MG_EN[mg] || mg).join(" · ")}
+                      {lang === "zh" ? day.allMGs.join("・") : day.allMGs.map(mg => MG_EN[mg] || mg).join(" · ")}
                     </span>
-                    <span style={{ fontSize:12, color:C.label }}>{fmtDate(w.date, lang)}</span>
+                    <span style={{ fontSize:12, color:C.label }}>{fmtDate(day.date, lang)}</span>
                   </div>
                   <div style={{ fontSize:12, color:C.label }}>
-                    {w.exercises.map(ex => { const it = library.find(l => l.id === ex.libId); return it ? it.name : (lang === "en" ? "(Deleted)" : "(已刪除)"); }).join(lang === "zh" ? "、" : ", ")}
+                    {day.allExercises.map(ex => { const it = library.find(l => l.id === ex.libId); return it ? it.name : (lang === "en" ? "(Deleted)" : "(已刪除)"); }).join(lang === "zh" ? "、" : ", ")}
                   </div>
                 </div>
                 <svg viewBox="0 0 24 24" fill={C.sep} width="14" height="14"><path d="M10 6l6 6-6 6V6z"/></svg>

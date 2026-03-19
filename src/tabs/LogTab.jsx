@@ -1,20 +1,26 @@
 import { useState } from "react";
 import { useLang, T, MG_EN } from "../data/i18n.js";
-import { MG_OPTIONS, WEEKDAYS, WEEKDAY_CN, MONTHS_EN } from "../data/constants.js";
+import { MG_OPTIONS, COLOR_OPTS, WEEKDAYS, WEEKDAY_CN, MONTHS_EN } from "../data/constants.js";
 import { useC } from "../theme.js";
 import { todayStr, localDate, uid } from "../utils/date.js";
 import { Div, Card } from "../components/ui.jsx";
 import { WeightSetEditor } from "../components/WeightSetEditor.jsx";
 
-export function LogTab({ library, onSave, showToast }) {
+export function LogTab({ library, onSave, onAddToLibrary, showToast }) {
   const lang = useLang(); const t = T[lang]; const C = useC();
   const [muscleGroups,    setMG]            = useState([]);
-  const [showMGPicker,    setShowMG]         = useState(false);
-  const [rows,            setRows]           = useState([]);
-  const [showLibPicker,   setShowLib]        = useState(false);
-  const [libSearch,       setLibSearch]      = useState("");
-  const [selectedDate,    setSelectedDate]   = useState(todayStr());
-  const [showDatePicker,  setShowDatePicker] = useState(false);
+  const [showMGPicker,    setShowMG]        = useState(false);
+  const [rows,            setRows]          = useState([]);
+  const [showLibPicker,   setShowLib]       = useState(false);
+  const [libSearch,       setLibSearch]     = useState("");
+  const [selectedDate,    setSelectedDate]  = useState(todayStr());
+  const [showDatePicker,  setShowDatePicker]= useState(false);
+
+  // 新增動作 sheet 狀態
+  const [showAddNew,   setShowAddNew]  = useState(false);
+  const [newName,      setNewName]     = useState("");
+  const [newMG,        setNewMG]       = useState(MG_OPTIONS[0]);
+  const [newColor,     setNewColor]    = useState(COLOR_OPTS[0]);
 
   const addRow = (libId) => {
     const item = library.find(l => l.id === libId);
@@ -28,6 +34,23 @@ export function LogTab({ library, onSave, showToast }) {
       noteDirty:  false,
     }]);
     setShowLib(false); setLibSearch("");
+  };
+
+  const handleAddNew = () => {
+    if (!newName.trim()) return;
+    const newItem = { id: uid(), name: newName.trim(), muscleGroup: newMG, color: newColor, note:"", history:[] };
+    onAddToLibrary(newItem);
+    // 新增後直接加入本次訓練
+    setRows(p => [...p, {
+      libId: newItem.id,
+      equipment: "",
+      weightSets: [{ weight:"", reps:[10,10,10] }],
+      feeling: "",
+      noteLocal: "",
+      noteDirty: false,
+    }]);
+    setNewName(""); setNewMG(MG_OPTIONS[0]); setNewColor(COLOR_OPTS[0]);
+    setShowAddNew(false); setShowLib(false); setLibSearch("");
   };
 
   const upd = (i, patch) => setRows(p => p.map((r, j) => j === i ? { ...r, ...patch } : r));
@@ -117,30 +140,6 @@ export function LogTab({ library, onSave, showToast }) {
       </div>
 
       <div style={{ padding:"16px" }}>
-        <Card style={{ marginBottom:16 }}>
-          <div style={{ padding:"12px 16px", display:"flex", flexWrap:"wrap", gap:8, alignItems:"center" }}>
-            <span style={{ fontSize:12, fontWeight:500, color:C.label, letterSpacing:0.3 }}>{t.logMuscleLabel}</span>
-            {muscleGroups.map(mg => (
-              <span key={mg} style={{ display:"inline-flex", alignItems:"center", gap:4, background:`${C.indigo}15`, borderRadius:20, padding:"3px 10px", fontSize:13, fontWeight:500, color:C.indigo }}>
-                {lang === "en" ? MG_EN[mg] || mg : mg}
-                <button onClick={() => setMG(p => p.filter(x => x !== mg))} style={{ background:"none", border:"none", cursor:"pointer", padding:0, color:C.indigo, fontSize:14, lineHeight:1 }}>×</button>
-              </span>
-            ))}
-            <button onClick={() => setShowMG(v => !v)} style={{ background:`${C.blue}10`, border:`1px dashed ${C.blue}60`, borderRadius:20, padding:"3px 12px", fontSize:13, fontWeight:500, color:C.blue, cursor:"pointer" }}>
-              {showMGPicker ? t.logCollapse : t.logCustomMuscle}
-            </button>
-          </div>
-          {showMGPicker && (
-            <div style={{ padding:"0 16px 14px", display:"flex", flexWrap:"wrap", gap:6 }}>
-              {MG_OPTIONS.filter(m => !muscleGroups.includes(m)).map(m => (
-                <button key={m} onClick={() => setMG(p => [...p, m])} style={{ background:C.f5, border:`1px solid ${C.sep}`, borderRadius:20, padding:"5px 14px", fontSize:13, color:C.sub, cursor:"pointer" }}>
-                  {lang === "en" ? MG_EN[m] || m : m}
-                </button>
-              ))}
-            </div>
-          )}
-        </Card>
-
         {rows.map((row, i) => {
           const item = library.find(l => l.id === row.libId);
           if (!item) return null;
@@ -220,6 +219,15 @@ export function LogTab({ library, onSave, showToast }) {
                 style={{ width:"100%", background:C.bg, border:`1px solid ${C.sep}`, borderRadius:10, padding:"10px 14px", fontSize:15, color:C.text, boxSizing:"border-box", outline:"none", fontFamily:"inherit" }} />
             </div>
             <div style={{ overflowY:"auto", paddingBottom:20 }}>
+              {/* 新增動作按鈕 */}
+              <button onClick={() => setShowAddNew(true)}
+                style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"14px 20px", background:"none", border:"none", borderBottom:`1px solid ${C.sep}`, cursor:"pointer", textAlign:"left" }}>
+                <div style={{ width:28, height:28, borderRadius:"50%", background:`${C.blue}15`, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <span style={{ color:C.blue, fontSize:18, lineHeight:1 }}>+</span>
+                </div>
+                <span style={{ fontSize:15, fontWeight:600, color:C.blue }}>{t.logAddNew}</span>
+              </button>
+
               {Object.entries(grouped).map(([mg, items]) => (
                 <div key={mg}>
                   <div style={{ padding:"12px 20px 6px", fontSize:11, fontWeight:600, color:C.label, letterSpacing:0.5 }}>
@@ -239,6 +247,50 @@ export function LogTab({ library, onSave, showToast }) {
                   ))}
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 新增動作 sheet */}
+      {showAddNew && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.45)", display:"flex", flexDirection:"column", zIndex:300 }}
+          onClick={e => { if (e.target === e.currentTarget) setShowAddNew(false); }}>
+          <div style={{ marginTop:"auto", background:C.card, borderRadius:"20px 20px 0 0", maxHeight:"80vh", display:"flex", flexDirection:"column" }}>
+            <div style={{ display:"flex", justifyContent:"center", padding:"12px 0 4px" }}>
+              <div style={{ width:36, height:4, borderRadius:2, background:C.sep }} />
+            </div>
+            <div style={{ padding:"8px 20px 14px", display:"flex", justifyContent:"space-between", alignItems:"center", borderBottom:`1px solid ${C.sep}` }}>
+              <span style={{ fontSize:17, fontWeight:700, color:C.text }}>{t.logAddNewTitle}</span>
+              <button onClick={() => setShowAddNew(false)} style={{ background:C.f5, border:"none", borderRadius:"50%", width:28, height:28, color:C.label, fontSize:16, cursor:"pointer" }}>×</button>
+            </div>
+            <div style={{ overflowY:"auto", padding:"16px 20px 32px" }}>
+              <div style={{ fontSize:11, fontWeight:600, color:C.label, letterSpacing:0.4, marginBottom:6 }}>{t.addName}</div>
+              <input value={newName} onChange={e => setNewName(e.target.value)} placeholder={t.addName}
+                style={{ width:"100%", background:C.f5, border:`1px solid ${C.sep}`, borderRadius:10, padding:"10px 12px", fontSize:15, color:C.text, boxSizing:"border-box", outline:"none", fontFamily:"inherit", marginBottom:16 }} />
+
+              <div style={{ fontSize:11, fontWeight:600, color:C.label, letterSpacing:0.4, marginBottom:8 }}>{t.addMuscle}</div>
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:16 }}>
+                {MG_OPTIONS.map(mg => (
+                  <button key={mg} onClick={() => setNewMG(mg)}
+                    style={{ background:newMG===mg?C.blue:"none", border:`1px solid ${newMG===mg?C.blue:C.sep}`, borderRadius:20, padding:"5px 12px", fontSize:13, color:newMG===mg?"#fff":C.sub, cursor:"pointer" }}>
+                    {lang === "en" ? MG_EN[mg] || mg : mg}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ fontSize:11, fontWeight:600, color:C.label, letterSpacing:0.4, marginBottom:8 }}>{t.addColor}</div>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:24 }}>
+                {COLOR_OPTS.map(col => (
+                  <button key={col} onClick={() => setNewColor(col)}
+                    style={{ width:28, height:28, borderRadius:"50%", background:col, border:newColor===col?`3px solid ${C.text}`:"3px solid transparent", cursor:"pointer", padding:0, boxSizing:"border-box" }} />
+                ))}
+              </div>
+
+              <button onClick={handleAddNew} disabled={!newName.trim()}
+                style={{ width:"100%", padding:"14px", background:newName.trim()?C.blue:"#C7C7CC", border:"none", borderRadius:14, color:"#fff", fontSize:15, fontWeight:600, cursor:newName.trim()?"pointer":"not-allowed" }}>
+                {t.addBtn}
+              </button>
             </div>
           </div>
         </div>

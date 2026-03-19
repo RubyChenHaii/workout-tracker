@@ -59,14 +59,30 @@ export default function App() {
   };
 
   const openLibItem        = (id) => { setLibItemId(id); setTab("library"); };
-  const handleUpdateWorkout = (updated) => setWorkouts(p => p.map(w => w.id === updated.id ? updated : w));
+  const handleAddToLibrary  = (newItem) => setLibrary(p => [...p, newItem]);
+  const handleUpdateWorkout = (updated) => {
+    setWorkouts(p => p.map(w => w.id === updated.id ? updated : w));
+    // 延遲到下一個 tick，避免兩個 setState 同時觸發阻塞主執行緒
+    setTimeout(() => {
+      setLibrary(p => p.map(item => ({
+        ...item,
+        history: item.history.map(h => {
+          if (h.workoutId !== updated.id) return h;
+          const updatedEx = updated.exercises.find(ex => ex.libId === item.id);
+          if (!updatedEx) return h;
+          return { ...h, equipment: updatedEx.equipment, weightSets: updatedEx.weightSets, feeling: updatedEx.feeling };
+        }),
+      })));
+    }, 0);
+  };
   const handleDeleteWorkout = (id) => {
     setWorkouts(p => p.filter(w => w.id !== id));
-    // library 裡各動作的 history 也同步移除對應的紀錄
-    setLibrary(p => p.map(item => ({
-      ...item,
-      history: item.history.filter(h => h.workoutId !== id),
-    })));
+    setTimeout(() => {
+      setLibrary(p => p.map(item => ({
+        ...item,
+        history: item.history.filter(h => h.workoutId !== id),
+      })));
+    }, 0);
   };
   const openDayDetail       = (date) => { setDetailDate(date); navigate("daydetail"); };
   const handleEditWorkout   = (id) => { setDetailId(id); navigate("detail"); };
@@ -122,7 +138,7 @@ export default function App() {
                     onOpenLibItem={openLibItem}
                     onEditWorkout={handleEditWorkout} />
               : tab === "log"
-                ? <LogTab library={library} onSave={handleSave} showToast={showToast} />
+                ? <LogTab library={library} onSave={handleSave} onAddToLibrary={handleAddToLibrary} showToast={showToast} />
               : tab === "history"
                 ? <HistoryTab workouts={workouts} library={library} onOpenDay={openDayDetail} />
               : tab === "library"
@@ -138,3 +154,4 @@ export default function App() {
     </DarkCtx.Provider>
   );
 }
+
