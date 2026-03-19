@@ -85,7 +85,7 @@ export function HistoryTab({ workouts, library, onOpenDay }) {
         {months.map(monthKey => {
           const isOpen = openMonths.has(monthKey);
           const monthDates = byMonth[monthKey];
-          const sessionCount = monthDates.reduce((sum, d) => sum + byDate[d].workouts.length, 0);
+          const dayCount = monthDates.length;
 
           return (
             <div key={monthKey} style={{ marginBottom:8 }}>
@@ -97,7 +97,7 @@ export function HistoryTab({ workouts, library, onOpenDay }) {
                 <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                   <span style={{ fontSize:15, fontWeight:700, color:C.text }}>{monthLabel(monthKey)}</span>
                   <span style={{ fontSize:12, color:C.blue, background:`${C.blue}12`, borderRadius:6, padding:"2px 8px", fontWeight:500 }}>
-                    {lang === "zh" ? `${sessionCount} 次` : `${sessionCount} session${sessionCount > 1 ? "s" : ""}`}
+                    {lang === "zh" ? `${dayCount} 日` : `${dayCount} day${dayCount > 1 ? "s" : ""}`}
                   </span>
                 </div>
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
