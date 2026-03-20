@@ -1,7 +1,7 @@
 {
   "homepage": "https://rubychenhaii.github.io/workout-tracker",
-  "name": "my-workout",
-  "version": "1.8.0",
+  "name": "Gym-Reco",
+  "version": "1.9.0",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
