@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useLang, T } from "../data/i18n.js";
+import { useLang, T, MG_EN } from "../data/i18n.js";
 import { useC } from "../theme.js";
 import { Card, SLabel } from "../components/ui.jsx";
 
@@ -22,25 +22,30 @@ export function AboutTab({ workouts, library, onImport }) {
     a.click(); URL.revokeObjectURL(url);
   };
 
-  const exportCSV = () => {
-    const rows = [["日期","星期","部位","動作","重量","組次","器材","感受"]];
-    workouts.forEach(w => {
-      w.exercises.forEach(ex => {
-        const lib = library.find(l => l.id === ex.libId);
-        const name = lib ? lib.name : "(已刪除)";
-        const mg = lib ? lib.muscleGroup : "";
-        ex.weightSets.forEach(ws => {
-          rows.push([w.date, w.weekday, mg, name, ws.weight, ws.reps.join("/"), ex.equipment || "", ex.feeling || ""]);
-        });
+ const exportCSV = () => {
+  const isZh = lang === "zh";
+  const header = isZh
+    ? ["日期","星期","部位","動作","重量","組次","器材","感受"]
+    : ["Date","Weekday","Muscle Group","Exercise","Weight","Reps","Equipment","Feeling"];
+  const rows = [header];
+  const sorted = [...workouts].sort((a, b) => a.date.localeCompare(b.date));
+  sorted.forEach(w => {
+    w.exercises.forEach(ex => {
+      const lib = library.find(l => l.id === ex.libId);
+      const name = lib ? lib.name : (isZh ? "(已刪除)" : "(Deleted)");
+      const mg = lib ? (isZh ? lib.muscleGroup : MG_EN[lib.muscleGroup] || lib.muscleGroup) : "";
+      ex.weightSets.forEach(ws => {
+        rows.push([w.date, w.weekday, mg, name, ws.weight, ws.reps.join("/"), ex.equipment || "", ex.feeling || ""]);
       });
     });
-    const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type:"text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url;
-    a.download = `gymreco-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click(); URL.revokeObjectURL(url);
-  };
+  });
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type:"text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a"); a.href = url;
+  a.download = `gymreco-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+};
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
